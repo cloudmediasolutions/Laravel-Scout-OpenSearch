@@ -18,19 +18,51 @@ You can include this package via Composer:
 
 Add / set environment variables (in .env):
 
-`SCOUT_DRIVER=CloudMediaSolutions\LaravelScoutOpenSearch\OpenSearchEngine`
+`SCOUT_DRIVER=CloudMediaSolutions\LaravelScoutOpenSearch\Engines\OpenSearchEngine`
 
 Add your OpenSearch host(s): (You can seperate multiple hosts with a comma)
 
 `OPENSEARCH_HOSTS=http://localhost:9200`
 
+If you have any web authentication on your OpenSearch cluster, you can extend the `opensearch.client` config.
+
+Basic authentication:
+```php
+
+    'client' => [
+        'hosts' => explode(',', env('OPENSEARCH_HOSTS')),
+        'basicAuthentication' => [
+            env('OPENSEARCH_USERNAME'),
+            env('OPENSEARCH_PASSWORD'),
+        ],
+    ],
+
+```
+
 ## Usage
 
+Before you can use custom index settings and mappings, you have to publish the config to your application:
+
+`php artisan vendor:publish --tag "opensearch-config"`
+
+After changing indexes you have to create the index:
+
+If the index already exists, delete it first:
+
+`php artisan scout:delete-index yourSearchableAsValue`
+
+Then you can create the index:
+
+`php artisan scout:index yourSearchableAsValue`
+
+The index is at this point completely empty. You can import existing data as described in the Laravel Scout documentation: 
+
+`php artisan scout:import "App\Models\Post"`
 
 ### Index settings
 Some [index settings](https://opensearch.org/docs/latest/opensearch/rest-api/index-apis/create-index/#index-settings) are static and can only be set on index creation. That's why it is important to configure it - when you have specific whishes - before you start using an index. 
 
-You can find an example in `opensearch.indices.default.settings`. Default is the key as default / fallback configuration. When you want a setting for a specific index, you use `opensearch.indices.YourIndexName.settings`.
+You can find an example in `opensearch.indices.default.settings`. Default is the key as default / fallback configuration. When you want a setting for a specific index, you use `opensearch.indices.yourSearchableAsValue.settings`.
 
 ### Mappings
 Sometimes you need specific field mappings in OpenSearch. For example, when you use UUID's, the field type is automatically set to `text` and it can be usefull to have them as `keyword` in filters. 
