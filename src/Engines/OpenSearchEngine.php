@@ -191,8 +191,8 @@ class OpenSearchEngine extends Engine
     public function createIndex($name, array $options = []): array
     {
         $body = array_replace_recursive(
-            config('opensearch.indices.default'),
-            config('opensearch.indices.'.$name));
+            config('opensearch.indices.default') ?? [],
+            config('opensearch.indices.'.$name) ?? []);
 
         return $this->opensearch->indices()->create(['index' => $name, 'body' => $body]);
     }
