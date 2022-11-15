@@ -16,18 +16,18 @@ final class SearchFactory
     {
         $search = new Search();
 
-        if ($builder->query === null) {
-            $builder->query = '';
-        }
+        $query = $builder->query ? new QueryStringQuery($builder->query) : null;
 
-        $query = new QueryStringQuery($builder->query);
         if (static::hasWhereFilters($builder)) {
             $boolQuery = new BoolQuery();
             $boolQuery = static::addWheres($builder, $boolQuery);
             $boolQuery = static::addWhereIns($builder, $boolQuery);
-            $boolQuery->add($query, BoolQuery::MUST);
+
+            if ($query) {
+                $boolQuery->add($query);
+            }
             $search->addQuery($boolQuery);
-        } else {
+        } elseif($query) {
             $search->addQuery($query);
         }
 
@@ -39,7 +39,7 @@ final class SearchFactory
             $search->setSize($options['size']);
         }
 
-        if (!empty($builder->orders)) {
+        if (! empty($builder->orders)) {
             foreach ($builder->orders as $order) {
                 $search->addSort(new FieldSort($order['column'], $order['direction']));
             }
@@ -55,12 +55,12 @@ final class SearchFactory
 
     private static function hasWheres(Builder $builder): bool
     {
-        return !empty($builder->wheres);
+        return ! empty($builder->wheres);
     }
 
     private static function hasWhereIns(Builder $builder): bool
     {
-        return isset($builder->whereIns) && !empty($builder->whereIns);
+        return isset($builder->whereIns) && ! empty($builder->whereIns);
     }
 
     private static function addWheres(Builder $builder, BoolQuery $boolQuery): BoolQuery
