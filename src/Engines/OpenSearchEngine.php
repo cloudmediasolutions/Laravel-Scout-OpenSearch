@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Engines\Engine;
+use ONGR\ElasticsearchDSL\Query\MatchAllQuery;
 use OpenSearch\Client;
 
 class OpenSearchEngine extends Engine
@@ -177,9 +178,12 @@ class OpenSearchEngine extends Engine
 
     public function flush($model): void
     {
-        $model->newQuery()
-            ->orderBy($model->getKeyName())
-            ->unsearchable();
+        $this->opensearch->deleteByQuery([
+            'index' => $model->searchableAs(),
+            'body'  => [
+                'query' => (new MatchAllQuery())->toArray()
+            ]
+        ]);
     }
 
     /**
