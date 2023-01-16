@@ -3,7 +3,11 @@
 namespace CloudMediaSolutions\LaravelScoutOpenSearch\Engines;
 
 use CloudMediaSolutions\LaravelScoutOpenSearch\SearchFactory;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\Cursor;
+use Illuminate\Pagination\CursorPaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
@@ -223,5 +227,50 @@ class OpenSearchEngine extends Engine
                 'id' => $model->getScoutKey()
             ]);
         });
+    }
+
+    /**
+     * @see https://opensearch.org/docs/latest/opensearch/search/paginate/#the-search_after-parameter
+     *
+     * @todo _score cursor
+     * @todo eloquent and opensearch date format difference
+     * 
+     * @param Builder $builder
+     * @param integer $perPage
+     * @param string $cursorName
+     * @return CursorPaginator
+     */
+    public function cursorPaginate(Builder $builder, int $perPage, string $cursorName = "cursor"): CursorPaginator
+    {
+        $cursor = request($cursorName);
+        $cursor = empty($cursor) ? CursorPaginator::resolveCurrentCursor($cursorName, $cursor) : Cursor::fromEncoded($cursor);
+
+        $cols = array_map(function ($orderItem) {
+            return $orderItem["column"];
+        }, $builder->orders);
+
+        $response = $this->performSearch($builder, array_filter([
+            "size" => $perPage + 1,
+            "search_after" => $cursor ? $this->searchAfter($cols, $cursor) : null
+        ]));
+
+        $items = $builder->model->newCollection(
+            $this->map($builder, $response, $builder->model)->all()
+        );
+
+        $options = [
+            "path" => Paginator::resolveCurrentPath(),
+            "cursorName" => $cursorName,
+            "parameters" => $cols
+        ];
+
+        return Container::getInstance()->makeWith(CursorPaginator::class, compact("items", "perPage", "cursor", "options"));
+    }
+
+    private function searchAfter(array $cols, Cursor $cursor): array
+    {
+        return array_values(
+            array_intersect_key($cursor->toArray(), array_flip($cols))
+        );
     }
 }

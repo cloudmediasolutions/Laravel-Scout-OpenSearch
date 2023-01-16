@@ -173,4 +173,9 @@ class OpenSearchEngineTest extends TestCase
         $this->engine->delete(Collection::make([new TestModel(['id' => 100])]));
     }
 
+    public function test_cursor_paginate()
+    {
+        //@todo
+    }
+
 }
