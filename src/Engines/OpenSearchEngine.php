@@ -238,12 +238,21 @@ class OpenSearchEngine extends Engine
      * @param Builder $builder
      * @param integer $perPage
      * @param string $cursorName
+     * @param Cursor|string|null $cursor
      * @return CursorPaginator
      */
-    public function cursorPaginate(Builder $builder, int $perPage, string $cursorName = "cursor"): CursorPaginator
-    {
-        $cursor = request($cursorName);
-        $cursor = empty($cursor) ? CursorPaginator::resolveCurrentCursor($cursorName, $cursor) : Cursor::fromEncoded($cursor);
+    public function cursorPaginate(
+        Builder $builder, 
+        int $perPage, 
+        string $cursorName = "cursor", 
+        $cursor = null
+    ): CursorPaginator {
+
+        if (! $cursor instanceof Cursor) {
+            $cursor = is_string($cursor) 
+                ? Cursor::fromEncoded($cursor)
+                : CursorPaginator::resolveCurrentCursor($cursorName, $cursor);
+        }
 
         $cols = array_map(function ($orderItem) {
             return $orderItem["column"];
