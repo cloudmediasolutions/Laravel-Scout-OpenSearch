@@ -30,17 +30,19 @@ class OpenSearchEngine extends Engine
             }
 
             $docs[] = [
-                "index" => [
-                    "_index" => $model->searchableAs(),
-                    "_id" => $model->getScoutKey(),
+                'index' => [
+                    '_index' => $model->searchableAs(),
+                    '_id' => $model->getScoutKey(),
                     ...$model->scoutMetadata()
                 ]
             ];
 
             $docs[] = $searchableData;
+
+            return $docs;
         }, []);
 
-        $this->opensearch->bulk(["body" => $docs]);
+        $this->opensearch->bulk(['body' => $docs]);
     }
 
     /**
@@ -219,11 +221,17 @@ class OpenSearchEngine extends Engine
             return;
         }
 
-        $models->each(function ($model) {
-            $this->opensearch->delete([
-                'index' => $model->searchableAs(),
-                'id' => $model->getScoutKey()
-            ]);
-        });
+        $docs = $models->reduce(function ($docs, $model) {
+            $docs[] = [
+                'delete' => [
+                    '_index' => $model->searchableAs(),
+                    '_id' => $model->getScoutKey()
+                ]
+            ];
+
+            return $docs;
+        }, []);
+
+        $this->opensearch->bulk(['body' => $docs]);
     }
 }

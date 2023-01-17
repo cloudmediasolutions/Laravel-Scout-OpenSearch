@@ -26,8 +26,7 @@ class OpenSearchEngineTest extends TestCase
 
     public function test_update_adds_document()
     {
-        $this->client->shouldReceive('bulk')->once()->with([
-            'index' => 'table',
+        $this->client->shouldReceive('bulk')->with([
             'body' => [
                 [
                     'index' => [
@@ -165,10 +164,16 @@ class OpenSearchEngineTest extends TestCase
 
     public function test_delete_document()
     {
-        $this->client->shouldReceive('delete')->with([
-            'index' => 'table',
-            'id' => 100,
-        ])->andReturns(Delete::class);
+        $this->client->shouldReceive('bulk')->with([
+            'body' => [
+                [
+                    "delete" => [
+                        "_index" => "table",
+                        "_id" => 100
+                    ]
+                ]
+            ]
+        ])->andReturns(Bulk::class);
 
         $this->engine->delete(Collection::make([new TestModel(['id' => 100])]));
     }
