@@ -24,21 +24,23 @@ class OpenSearchEngine extends Engine
             return;
         }
 
-        $model = $models->first();
+        $docs = $models->reduce(function ($docs, $model) {
+            if (empty($searchableData = $model->toSearchableArray())) {
+                return $docs;
+            }
 
-        $models->chunk(1000)->each(function ($chunk) use ($model) {
-            $payload = [];
-            $chunk->each(function (Model $model) use (&$payload) {
-                $payload[] = [
-                    'index' => [
-                        '_index' => $model->searchableAs(), '_id' => $model->getScoutKey(), ...$model->scoutMetadata()
-                    ]
-                ];
-                $payload[] = $model->toSearchableArray();
-            });
+            $docs[] = [
+                "index" => [
+                    "_index" => $model->searchableAs(),
+                    "_id" => $model->getScoutKey(),
+                    ...$model->scoutMetadata()
+                ]
+            ];
 
-            $this->opensearch->bulk(['index' => $model->searchableAs(), 'body' => $payload]);
-        });
+            $docs[] = $searchableData;
+        }, []);
+
+        $this->opensearch->bulk(["body" => $docs]);
     }
 
     /**
