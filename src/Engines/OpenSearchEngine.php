@@ -18,6 +18,9 @@ class OpenSearchEngine extends Engine
         //
     }
 
+    /**
+     * @inheritDoc
+     */
     public function update($models): void
     {
         if ($models->isEmpty()) {
@@ -215,6 +218,9 @@ class OpenSearchEngine extends Engine
         return $this->opensearch->indices()->delete(['index' => $name]);
     }
 
+    /**
+     * @inheritDoc
+     */
     public function delete($models): void
     {
         if ($models->isEmpty()) {
