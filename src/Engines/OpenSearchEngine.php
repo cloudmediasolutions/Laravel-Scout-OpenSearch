@@ -27,12 +27,12 @@ class OpenSearchEngine extends Engine
             return;
         }
 
-        $docs = $models->reduce(function ($docs, $model) {
+        $payload = $models->reduce(function ($payload, $model) {
             if (empty($searchableData = $model->toSearchableArray())) {
-                return $docs;
+                return $payload;
             }
 
-            $docs[] = [
+            $payload[] = [
                 'index' => [
                     '_index' => $model->searchableAs(),
                     '_id' => $model->getScoutKey(),
@@ -40,12 +40,12 @@ class OpenSearchEngine extends Engine
                 ]
             ];
 
-            $docs[] = $searchableData;
+            $payload[] = $searchableData;
 
-            return $docs;
+            return $payload;
         }, []);
 
-        $this->opensearch->bulk(['body' => $docs]);
+        $this->opensearch->bulk(['body' => $payload]);
     }
 
     /**
@@ -227,17 +227,17 @@ class OpenSearchEngine extends Engine
             return;
         }
 
-        $docs = $models->reduce(function ($docs, $model) {
-            $docs[] = [
+        $payload = $models->reduce(function ($payload, $model) {
+            $payload[] = [
                 'delete' => [
                     '_index' => $model->searchableAs(),
                     '_id' => $model->getScoutKey()
                 ]
             ];
 
-            return $docs;
+            return $payload;
         }, []);
 
-        $this->opensearch->bulk(['body' => $docs]);
+        $this->opensearch->bulk(['body' => $payload]);
     }
 }
