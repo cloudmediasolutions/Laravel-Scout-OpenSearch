@@ -26,7 +26,7 @@ class OpenSearchEngineTest extends TestCase
 
     public function test_update_adds_document()
     {
-        $this->client->shouldReceive('bulk')->with([
+        $this->client->shouldReceive('bulk')->once()->with([
             'body' => [
                 [
                     'index' => [
@@ -99,7 +99,7 @@ class OpenSearchEngineTest extends TestCase
         $perPage = 5;
         $page = 2;
 
-        $this->client->shouldReceive('search')->with([
+        $this->client->shouldReceive('search')->once()->with([
             'index' => 'table',
             'body' => [
                 'query' => [
@@ -121,7 +121,7 @@ class OpenSearchEngineTest extends TestCase
         $perPage = 5;
         $page = 2;
 
-        $this->client->shouldReceive('search')->with([
+        $this->client->shouldReceive('search')->once()->with([
             'index' => 'table',
             'body' => [
                 'query' => [
@@ -164,7 +164,7 @@ class OpenSearchEngineTest extends TestCase
 
     public function test_delete_document()
     {
-        $this->client->shouldReceive('bulk')->with([
+        $this->client->shouldReceive('bulk')->once()->with([
             'body' => [
                 [
                     "delete" => [
