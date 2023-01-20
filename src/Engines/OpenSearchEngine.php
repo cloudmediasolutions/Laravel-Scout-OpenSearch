@@ -2,8 +2,9 @@
 
 namespace CloudMediaSolutions\LaravelScoutOpenSearch\Engines;
 
+use CloudMediaSolutions\LaravelScoutOpenSearch\Paginator\ScrollPaginator;
+use CloudMediaSolutions\LaravelScoutOpenSearch\Paginator\ScrollPaginatorRaw;
 use CloudMediaSolutions\LaravelScoutOpenSearch\SearchFactory;
-use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
@@ -232,9 +233,6 @@ class OpenSearchEngine extends Engine
     /**
      * @see https://opensearch.org/docs/latest/opensearch/search/paginate/#the-search_after-parameter
      *
-     * @todo _score cursor
-     * @todo eloquent and opensearch date format difference
-     * 
      * @param Builder $builder
      * @param integer $perPage
      * @param string $cursorName
@@ -244,42 +242,110 @@ class OpenSearchEngine extends Engine
     public function cursorPaginate(
         Builder $builder, 
         int $perPage, 
-        string $cursorName = "cursor", 
+        string $cursorName = 'cursor', 
         $cursor = null
     ): CursorPaginator {
+        $cursor = $this->resolveCursor($cursor, $cursorName);
+        $cols = $this->orderColumns($builder);
 
-        if (! $cursor instanceof Cursor) {
-            $cursor = is_string($cursor) 
-                ? Cursor::fromEncoded($cursor)
-                : CursorPaginator::resolveCurrentCursor($cursorName, $cursor);
-        }
-
-        $cols = array_map(function ($orderItem) {
-            return $orderItem["column"];
-        }, $builder->orders);
-
-        $response = $this->performSearch($builder, array_filter([
-            "size" => $perPage + 1,
-            "search_after" => $cursor ? $this->searchAfter($cols, $cursor) : null
-        ]));
+        $response = $this->performCursorSearch($builder, $perPage, $cols, $cursor);
 
         $items = $builder->model->newCollection(
             $this->map($builder, $response, $builder->model)->all()
         );
 
         $options = [
-            "path" => Paginator::resolveCurrentPath(),
-            "cursorName" => $cursorName,
-            "parameters" => $cols
+            'path' => Paginator::resolveCurrentPath(),
+            'cursorName' => $cursorName,
+            'parameters' => $cols
         ];
 
-        return Container::getInstance()->makeWith(CursorPaginator::class, compact("items", "perPage", "cursor", "options"));
+        return new ScrollPaginator($items, $perPage, $response, $cursor, $options);
+    }
+
+    private function resolveCursor($cursor, $cursorName): ?Cursor
+    {
+        if ($cursor instanceof Cursor) {
+            return $cursor;
+        }
+
+        return is_string($cursor) 
+            ? Cursor::fromEncoded($cursor)
+            : CursorPaginator::resolveCurrentCursor($cursorName, $cursor);
+    }
+
+    private function orderColumns(Builder $builder): array
+    {
+        return array_column($builder->orders, 'column');
+    }
+
+    private function performCursorSearch(
+        Builder $builder, 
+        int $perPage, 
+        array $cols, 
+        $cursor
+    ) {
+        $searchAfter = $cursor !== null 
+            ? $this->searchAfter($cols, $cursor)
+            : null;
+
+        if ($cursor !== null && 
+            $cursor->pointsToPreviousItems()
+        ) {
+            $builder->orders = array_map(
+                function ($order) {
+                    $order['direction'] = $order['direction'] === 'asc' ? 'desc' : 'asc';
+                    return $order;
+                }, 
+                $builder->orders
+            );
+        }
+
+        return $this->performSearch($builder, array_filter([
+            'size' => $perPage + 1,
+            'searchAfter' => $searchAfter
+        ]));
     }
 
     private function searchAfter(array $cols, Cursor $cursor): array
     {
-        return array_values(
-            array_intersect_key($cursor->toArray(), array_flip($cols))
+        return array_reduce(
+            $cols, 
+            function ($searchAfter, $col) use ($cursor) {
+                $searchAfter[] = $cursor->parameter($col);
+
+                return $searchAfter;
+            }, 
+            []
         );
+    }
+
+    /**
+     * @see https://opensearch.org/docs/latest/opensearch/search/paginate/#the-search_after-parameter
+     *
+     * @param Builder $builder
+     * @param integer|null $perPage
+     * @param string $cursorName
+     * @param [type] $cursor
+     * @return CursorPaginator
+     */
+    public function cursorPaginateRaw(        
+        Builder $builder, 
+        ?int $perPage = null, 
+        string $cursorName = 'cursor', 
+        $cursor = null
+    ): CursorPaginator {
+        $cursor = $this->resolveCursor($cursor, $cursorName);
+        $cols   = $this->orderColumns($builder);
+
+        $items = $this->performCursorSearch($builder, $perPage, $cols, $cursor)['hits']['hits'];
+
+        $options = [
+            'path' => Paginator::resolveCurrentPath(),
+            'cursorName' => $cursorName,
+            'parameters' => $cols
+        ];
+
+        return new ScrollPaginatorRaw($items, $perPage, $cursor, $options);
     }
 }

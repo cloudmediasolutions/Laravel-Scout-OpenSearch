@@ -32,8 +32,18 @@ class OpenSearchServiceProvider extends ServiceProvider
             return ClientBuilder::fromConfig(config('opensearch.client'));
         });
 
-        Builder::macro("cursorPaginate", function (int $perPage, string $cursorName = "cursor", $cursor = null): CursorPaginator {
-            return $this->engine()->cursorPaginate($this, $perPage, $cursorName, $cursor);
+        Builder::macro('cursorPaginate', function (int $perPage = null, string $cursorName = 'cursor', $cursor = null): CursorPaginator {
+            /**
+             * @var Builder $this
+             */
+            return $this->engine()->cursorPaginate($this, $perPage ?: $this->limit, $cursorName, $cursor);
+        });
+
+        Builder::macro('cursorPaginateRaw', function (int $perPage = null, string $cursorName = 'cursor', $cursor = null): CursorPaginator {
+            /**
+             * @var Builder $this
+             */
+            return $this->engine()->cursorPaginateRaw($this, $perPage ?: $this->limit, $cursorName, $cursor);
         });
     }
 }
