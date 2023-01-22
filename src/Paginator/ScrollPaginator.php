@@ -29,16 +29,16 @@ class ScrollPaginator extends CursorPaginator
     {
         parent::__construct($items, $perPage, $cursor, $options);
 
-        $items = $response['hits']['hits'];
+        $rawItems = array_slice($response['hits']['hits'], 0, $perPage);
 
         if (! $this->onFirstPage() && 
-            $firstItem = array_shift($items)
+            $firstItem = array_shift($rawItems)
         ) {
             $this->sortData[] = array_combine($this->parameters, $firstItem['sort']);
         }
 
         if (! $this->onLastPage() && 
-            $lastItem = array_pop($items)
+            $lastItem = array_pop($rawItems)
         ) {
             $this->sortData[] = array_combine($this->parameters, $lastItem['sort']);
         }
