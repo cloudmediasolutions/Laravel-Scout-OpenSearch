@@ -6,6 +6,7 @@ This package provides an [OpenSearch](https://opensearch.org/) engine for [Larav
 - Laravel Scout 9 support
 - Fully configurable settings per index, with default settings support
 - Optionally mappings configurable
+- Cursor pagination
 
 ## Requirements
 - PHP >= 8.0
