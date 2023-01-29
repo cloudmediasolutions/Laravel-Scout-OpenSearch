@@ -286,7 +286,7 @@ class OpenSearchEngine extends Engine
         $cursor
     ) {
         $searchAfter = $cursor !== null 
-            ? $this->searchAfter($cols, $cursor)
+            ? $cursor->parameters($cols)
             : null;
 
         if ($cursor !== null && 
@@ -307,19 +307,6 @@ class OpenSearchEngine extends Engine
         ]));
     }
 
-    private function searchAfter(array $cols, Cursor $cursor): array
-    {
-        return array_reduce(
-            $cols, 
-            function ($searchAfter, $col) use ($cursor) {
-                $searchAfter[] = $cursor->parameter($col);
-
-                return $searchAfter;
-            }, 
-            []
-        );
-    }
-
     /**
      * @see https://opensearch.org/docs/latest/opensearch/search/paginate/#the-search_after-parameter
      *
@@ -336,7 +323,7 @@ class OpenSearchEngine extends Engine
         $cursor = null
     ): CursorPaginator {
         $cursor = $this->resolveCursor($cursor, $cursorName);
-        $cols   = $this->orderColumns($builder);
+        $cols = $this->orderColumns($builder);
 
         $items = $this->performCursorSearch($builder, $perPage, $cols, $cursor)['hits']['hits'];
 

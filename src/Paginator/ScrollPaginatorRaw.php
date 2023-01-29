@@ -5,7 +5,7 @@ namespace CloudMediaSolutions\LaravelScoutOpenSearch\Paginator;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 
-class ScrollPaginatorRaw extends CursorPaginator
+final class ScrollPaginatorRaw extends CursorPaginator
 {
     /**
      * Create a new paginator instance.

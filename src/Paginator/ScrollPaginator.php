@@ -2,12 +2,13 @@
 
 namespace CloudMediaSolutions\LaravelScoutOpenSearch\Paginator;
 
+use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
-use Illuminate\Support\Arr;
 
-class ScrollPaginator extends CursorPaginator
+final class ScrollPaginator extends CursorPaginator
 {
-    private array $sortData = [];
+    private ?Cursor $nextCursor = null;
+    private ?Cursor $previousCursor = null;
 
     /**
      * Create a new paginator instance.
@@ -25,23 +26,49 @@ class ScrollPaginator extends CursorPaginator
         array $response,
         $cursor = null,
         $options = []
-    )
-    {
+    ) {
         parent::__construct($items, $perPage, $cursor, $options);
 
-        $rawItems = array_slice($response['hits']['hits'], 0, $perPage);
+        $this->initCursors(
+            array_slice($response['hits']['hits'], 0, $perPage)
+        );
+    }
+
+    private function initCursors(array $rawItems): void
+    {
+        if (! $this->onLastPage() && 
+            count($rawItems) > 0
+        ) {
+            $nextItem = $this->pointsToPrevoiusItems()
+                ? array_shift($rawItems)
+                : array_pop($rawItems);
+            
+            $this->nextCursor = new Cursor(
+                array_combine($this->parameters, $nextItem['sort'])
+            );
+        }
 
         if (! $this->onFirstPage() && 
-            $firstItem = array_shift($rawItems)
+            count($rawItems) > 0
         ) {
-            $this->sortData[] = array_combine($this->parameters, $firstItem['sort']);
+            $previousItem = $this->pointsToPrevoiusItems()
+                ? array_pop($rawItems)
+                : array_shift($rawItems);
+
+            $this->previousCursor = new Cursor(
+                array_combine($this->parameters, $previousItem['sort']), 
+                false
+            );
+        }
+    }
+
+    private function pointsToPrevoiusItems(): bool
+    {
+        if (! $this->cursor) {
+            return false;
         }
 
-        if (! $this->onLastPage() && 
-            $lastItem = array_pop($rawItems)
-        ) {
-            $this->sortData[] = array_combine($this->parameters, $lastItem['sort']);
-        }
+        return $this->cursor->pointsToPreviousItems();
     }
 
     /**
@@ -49,11 +76,7 @@ class ScrollPaginator extends CursorPaginator
      */
     public function previousCursor()
     {
-        if ($this->onFirstPage()) {
-            return null;
-        }
-
-        return $this->getCursorForItem(Arr::first($this->sortData), false);
+        return $this->previousCursor;
     }
 
     /**
@@ -61,10 +84,6 @@ class ScrollPaginator extends CursorPaginator
      */
     public function nextCursor()
     {
-        if ($this->onLastPage()) {
-            return null;
-        }
-
-        return $this->getCursorForItem(Arr::last($this->sortData), true);
+        return $this->nextCursor;
     }
 }
