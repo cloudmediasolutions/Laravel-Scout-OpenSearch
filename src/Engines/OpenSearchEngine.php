@@ -246,7 +246,7 @@ class OpenSearchEngine extends Engine
         $cursor = null
     ): CursorPaginator {
         $cursor = $this->resolveCursor($cursor, $cursorName);
-        $cols = $this->orderColumns($builder);
+        $cols = array_column($builder->orders, 'column');
 
         $response = $this->performCursorSearch($builder, $perPage, $cols, $cursor);
 
@@ -272,11 +272,6 @@ class OpenSearchEngine extends Engine
         return is_string($cursor) 
             ? Cursor::fromEncoded($cursor)
             : CursorPaginator::resolveCurrentCursor($cursorName, $cursor);
-    }
-
-    private function orderColumns(Builder $builder): array
-    {
-        return array_column($builder->orders, 'column');
     }
 
     private function performCursorSearch(
@@ -305,34 +300,5 @@ class OpenSearchEngine extends Engine
             'size' => $perPage + 1,
             'searchAfter' => $searchAfter
         ]));
-    }
-
-    /**
-     * @see https://opensearch.org/docs/latest/opensearch/search/paginate/#the-search_after-parameter
-     *
-     * @param Builder $builder
-     * @param integer|null $perPage
-     * @param string $cursorName
-     * @param [type] $cursor
-     * @return CursorPaginator
-     */
-    public function cursorPaginateRaw(        
-        Builder $builder, 
-        ?int $perPage = null, 
-        string $cursorName = 'cursor', 
-        $cursor = null
-    ): CursorPaginator {
-        $cursor = $this->resolveCursor($cursor, $cursorName);
-        $cols = $this->orderColumns($builder);
-
-        $items = $this->performCursorSearch($builder, $perPage, $cols, $cursor)['hits']['hits'];
-
-        $options = [
-            'path' => Paginator::resolveCurrentPath(),
-            'cursorName' => $cursorName,
-            'parameters' => $cols
-        ];
-
-        return new ScrollPaginatorRaw($items, $perPage, $cursor, $options);
     }
 }

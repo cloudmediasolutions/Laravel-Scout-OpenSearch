@@ -371,7 +371,7 @@ class OpenSearchEngineTest extends TestCase
                 ],
                 'size' => $perPage + 1,
                 'search_after' => [
-                    4
+                    $cursor->parameter('id')
                 ]
             ]
         ])->andReturns([

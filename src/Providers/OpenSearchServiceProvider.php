@@ -38,12 +38,5 @@ class OpenSearchServiceProvider extends ServiceProvider
              */
             return $this->engine()->cursorPaginate($this, $perPage ?: $this->limit, $cursorName, $cursor);
         });
-
-        Builder::macro('cursorPaginateRaw', function (int $perPage = null, string $cursorName = 'cursor', $cursor = null): CursorPaginator {
-            /**
-             * @var Builder $this
-             */
-            return $this->engine()->cursorPaginateRaw($this, $perPage ?: $this->limit, $cursorName, $cursor);
-        });
     }
 }
