@@ -36,11 +36,7 @@ class OpenSearchServiceProvider extends ServiceProvider
             /**
              * @var Builder $this
              */
-            $perPage = $perPage ?: $this->limit;
-
-            if (! $perPage) {
-                $perPage = $this->model->getPerPage();
-            }
+            $perPage = $perPage ?: $this->model->getPerPage();
 
             return $this->engine()->cursorPaginate($this, $perPage, $cursorName, $cursor);
         });
