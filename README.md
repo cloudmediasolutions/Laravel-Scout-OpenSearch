@@ -76,3 +76,16 @@ You can search data as documented by Laravel in [their docs](https://laravel.com
 - Star Trek
 - the wind AND (rises OR rising)
 - status:active Pencil
+
+### Cursor pagination
+Cursor pagination uses [search_after](https://opensearch.org/docs/latest/opensearch/search/paginate#the-search_after-parameter) parameter pagination.
+
+If no orders provided, the _id field will be used as default.
+
+```php
+
+    Song::search("crass")
+        ->orderBy("created_at")
+        ->cursorPaginate(10);
+
+```
