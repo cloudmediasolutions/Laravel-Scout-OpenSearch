@@ -245,6 +245,10 @@ class OpenSearchEngine extends Engine
         string $cursorName = 'cursor', 
         $cursor = null
     ): CursorPaginator {
+        if (empty($builder->orders)) {
+            $builder->orderBy("_id");
+        }
+
         $cursor = $this->resolveCursor($cursor, $cursorName);
         $cols = array_column($builder->orders, 'column');
 
