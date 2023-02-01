@@ -18,27 +18,34 @@ class OpenSearchEngine extends Engine
         //
     }
 
+    /**
+     * @inheritDoc
+     */
     public function update($models): void
     {
         if ($models->isEmpty()) {
             return;
         }
 
-        $model = $models->first();
+        $payload = $models->reduce(function ($payload, $model) {
+            if (empty($searchableData = $model->toSearchableArray())) {
+                return $payload;
+            }
 
-        $models->chunk(1000)->each(function ($chunk) use ($model) {
-            $payload = [];
-            $chunk->each(function (Model $model) use (&$payload) {
-                $payload[] = [
-                    'index' => [
-                        '_index' => $model->searchableAs(), '_id' => $model->getScoutKey(), ...$model->scoutMetadata()
-                    ]
-                ];
-                $payload[] = $model->toSearchableArray();
-            });
+            $payload[] = [
+                'index' => [
+                    '_index' => $model->searchableAs(),
+                    '_id' => $model->getScoutKey(),
+                    ...$model->scoutMetadata()
+                ]
+            ];
 
-            $this->opensearch->bulk(['index' => $model->searchableAs(), 'body' => $payload]);
-        });
+            $payload[] = $searchableData;
+
+            return $payload;
+        }, []);
+
+        $this->opensearch->bulk(['body' => $payload]);
     }
 
     /**
@@ -211,17 +218,26 @@ class OpenSearchEngine extends Engine
         return $this->opensearch->indices()->delete(['index' => $name]);
     }
 
+    /**
+     * @inheritDoc
+     */
     public function delete($models): void
     {
         if ($models->isEmpty()) {
             return;
         }
 
-        $models->each(function ($model) {
-            $this->opensearch->delete([
-                'index' => $model->searchableAs(),
-                'id' => $model->getScoutKey()
-            ]);
-        });
+        $payload = $models->reduce(function ($payload, $model) {
+            $payload[] = [
+                'delete' => [
+                    '_index' => $model->searchableAs(),
+                    '_id' => $model->getScoutKey()
+                ]
+            ];
+
+            return $payload;
+        }, []);
+
+        $this->opensearch->bulk(['body' => $payload]);
     }
 }
