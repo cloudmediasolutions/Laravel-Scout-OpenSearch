@@ -265,7 +265,7 @@ class OpenSearchEngine extends Engine
         }
 
         $cursor = $this->resolveCursor($cursor, $cursorName);
-        $cols = array_map($this->orderCol(...), $builder->orders);
+        $cols = array_map([$this, 'orderCol'], $builder->orders);
 
         $response = $this->performCursorSearch($builder, $perPage, $cols, $cursor);
 
@@ -312,7 +312,7 @@ class OpenSearchEngine extends Engine
             $cursor->pointsToPreviousItems()
         ) {
             $builder->orders = array_map(
-                $this->swapDirection(...),
+                [$this, 'swapDirection'],
                 $builder->orders
             );
         }
