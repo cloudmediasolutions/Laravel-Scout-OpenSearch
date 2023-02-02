@@ -44,8 +44,15 @@ final class SearchFactory
         }
 
         if (! empty($builder->orders)) {
+            /**
+             * @var array|FieldSort $order
+             */
             foreach ($builder->orders as $order) {
-                $search->addSort(new FieldSort($order['column'], $order['direction']));
+                $search->addSort(
+                    is_array($order) 
+                    ? new FieldSort($order['column'], $order['direction'])
+                    : $order
+                );
             }
         }
 

@@ -3,9 +3,7 @@
 namespace CloudMediaSolutions\LaravelScoutOpenSearch\Engines;
 
 use CloudMediaSolutions\LaravelScoutOpenSearch\Paginator\ScrollPaginator;
-use CloudMediaSolutions\LaravelScoutOpenSearch\Paginator\ScrollPaginatorRaw;
 use CloudMediaSolutions\LaravelScoutOpenSearch\SearchFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\Paginator;
@@ -14,6 +12,7 @@ use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Engines\Engine;
 use ONGR\ElasticsearchDSL\Query\MatchAllQuery;
+use ONGR\ElasticsearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 
 class OpenSearchEngine extends Engine
@@ -266,7 +265,7 @@ class OpenSearchEngine extends Engine
         }
 
         $cursor = $this->resolveCursor($cursor, $cursorName);
-        $cols = array_column($builder->orders, 'column');
+        $cols = array_map($this->orderCol(...), $builder->orders);
 
         $response = $this->performCursorSearch($builder, $perPage, $cols, $cursor);
 
@@ -294,6 +293,11 @@ class OpenSearchEngine extends Engine
             : CursorPaginator::resolveCurrentCursor($cursorName, $cursor);
     }
 
+    private function orderCol(array|FieldSort $order): string
+    {
+        return is_array($order) ? $order['column'] : $order->getField();
+    }
+
     private function performCursorSearch(
         Builder $builder, 
         int $perPage, 
@@ -308,10 +312,7 @@ class OpenSearchEngine extends Engine
             $cursor->pointsToPreviousItems()
         ) {
             $builder->orders = array_map(
-                function ($order) {
-                    $order['direction'] = $order['direction'] === 'asc' ? 'desc' : 'asc';
-                    return $order;
-                }, 
+                $this->swapDirection(...),
                 $builder->orders
             );
         }
@@ -320,5 +321,26 @@ class OpenSearchEngine extends Engine
             'size' => $perPage + 1,
             'searchAfter' => $searchAfter
         ]));
+    }
+
+    private function swapDirection(array|FieldSort $item): array|FieldSort
+    {
+        $direction = is_array($item) ? $item['direction'] : $item->getOrder();
+
+        if ($direction === null) {
+            $direction = 'asc';
+        }
+
+        $direction = $direction === 'asc' ? 'desc' : 'asc';
+
+        if (is_array($item)) {
+            $item['direction'] = $direction;
+        } 
+
+        else {
+            $item->setOrder($direction);
+        }
+
+        return $item;
     }
 }
