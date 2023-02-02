@@ -7,6 +7,7 @@ use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Scout\Builder;
 use Laravel\Scout\EngineManager;
+use ONGR\ElasticsearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 
@@ -39,6 +40,15 @@ class OpenSearchServiceProvider extends ServiceProvider
             $perPage = $perPage ?: $this->model->getPerPage();
 
             return $this->engine()->cursorPaginate($this, $perPage, $cursorName, $cursor);
+        });
+
+        Builder::macro('orderByRaw', function (FieldSort $sort) {
+            /**
+             * @var Builder $this
+             */
+            $this->orders[] = $sort;
+
+            return $this;
         });
     }
 }
