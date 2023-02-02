@@ -6,6 +6,7 @@ This package provides an [OpenSearch](https://opensearch.org/) engine for [Larav
 - Laravel Scout 9 support
 - Fully configurable settings per index, with default settings support
 - Optionally mappings configurable
+- Cursor pagination
 
 ## Requirements
 - PHP >= 8.0
@@ -75,3 +76,18 @@ You can search data as documented by Laravel in [their docs](https://laravel.com
 - Star Trek
 - the wind AND (rises OR rising)
 - status:active Pencil
+
+### Cursor pagination
+Cursor pagination uses [search_after](https://opensearch.org/docs/latest/opensearch/search/paginate#the-search_after-parameter) parameter pagination.
+
+```php
+
+    Song::search("crass")
+        ->orderBy("_score", "desc")
+        ->orderBy("id")
+        ->cursorPaginate(10);
+
+```
+If no sorting provided, the _id field will be used as default, and therefore no relevance sorting can be applied when using cursor pagination.
+
+Sort modes, nested and geo_distance sort are not supported yet.

@@ -39,6 +39,10 @@ final class SearchFactory
             $search->setSize($options['size']);
         }
 
+        if (array_key_exists('searchAfter', $options)) {
+            $search->setSearchAfter($options['searchAfter']);
+        }
+
         if (! empty($builder->orders)) {
             foreach ($builder->orders as $order) {
                 $search->addSort(new FieldSort($order['column'], $order['direction']));
@@ -60,7 +64,7 @@ final class SearchFactory
 
     private static function hasWhereIns(Builder $builder): bool
     {
-        return isset($builder->whereIns) && ! empty($builder->whereIns);
+        return ! empty($builder->whereIns);
     }
 
     private static function addWheres(Builder $builder, BoolQuery $boolQuery): BoolQuery

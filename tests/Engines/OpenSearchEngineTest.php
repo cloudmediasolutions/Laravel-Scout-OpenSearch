@@ -3,6 +3,8 @@
 namespace Tests\Engines;
 
 use CloudMediaSolutions\LaravelScoutOpenSearch\Engines\OpenSearchEngine;
+use Illuminate\Pagination\Cursor;
+use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Builder;
 use Mockery;
@@ -176,6 +178,253 @@ class OpenSearchEngineTest extends TestCase
         ])->andReturns(Bulk::class);
 
         $this->engine->delete(Collection::make([new TestModel(['id' => 100])]));
+    }
+
+    public function test_cursor_paginate()
+    {
+        $perPage = 3;
+        $modelMock = Mockery::mock(new TestModel());
+        $modelMock->shouldReceive('getScoutModelsByIds')
+            ->andReturn(
+            collect([
+                new TestModel(['id' => 1]),
+                new TestModel(['id' => 2]),
+                new TestModel(['id' => 3]),
+                new TestModel(['id' => 4])
+            ])
+        );
+
+        $this->client->shouldReceive('search')->with([
+            'index' => 'table',
+            'body' => [
+                'query' => [
+                    'query_string' => [
+                        'query' => 'mustang'
+                    ]
+                ],
+                'sort' => [
+                    [
+                        'id' => [
+                            'order' => 'asc'
+                        ]
+                    ]
+                ],
+                'size' => $perPage + 1,
+            ]
+        ])->andReturns([
+            'hits' => [
+                'total' => 5,
+                'hits' => [
+                    [
+                        '_id' => 1,
+                        '_source' => [
+                            'id' => 1
+                        ],
+                        'sort' => [
+                            1
+                        ]
+                    ],
+                    [
+                        '_id' => 2,
+                        '_source' => [
+                            'id' => 2
+                        ],
+                        'sort' => [
+                            2
+                        ]
+                    ],
+                    [
+                        '_id' => 3,
+                        '_source' => [
+                            'id' => 3
+                        ],
+                        'sort' => [
+                            3
+                        ]
+                    ],
+                    [
+                        '_id' => 4,
+                        '_source' => [
+                            'id' => 4
+                        ],
+                        'sort' => [
+                            4
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+
+        $builder = new Builder($modelMock, 'mustang');
+        $builder->orderBy('id');
+        /**
+         * @var CursorPaginator $paginator
+         */
+        $paginator = $this->engine->cursorPaginate($builder, $perPage);
+
+        $this->assertEquals(3, $paginator->nextCursor()->parameter('id'));
+        $this->assertNull($paginator->previousCursor());
+
+        return $paginator->nextCursor();
+    }
+
+    /**
+     * @depends test_cursor_paginate
+     *
+     */
+    public function test_cursor_paginate_next(Cursor $cursor)
+    {
+        $perPage = 3;
+        $modelMock = Mockery::mock(new TestModel());
+        $modelMock->shouldReceive('getScoutModelsByIds')
+            ->andReturn(
+            collect([
+                new TestModel(['id' => 4]),
+                new TestModel(['id' => 5])
+            ])
+        );
+
+        $this->client->shouldReceive('search')->with([
+            'index' => 'table',
+            'body' => [
+                'query' => [
+                    'query_string' => [
+                        'query' => 'mustang'
+                    ]
+                ],
+                'sort' => [
+                    [
+                        'id' => [
+                            'order' => 'asc'
+                        ]
+                    ]
+                ],
+                'size' => $perPage + 1,
+                'search_after' => [
+                    $cursor->parameter('id')
+                ]
+            ]
+        ])->andReturns([
+            'hits' => [
+                'total' => 5,
+                'hits' => [
+                    [
+                        '_id' => 4,
+                        '_source' => [
+                            'id' => 1
+                        ],
+                        'sort' => [
+                            4
+                        ]
+                    ],
+                    [
+                        '_id' => 5,
+                        '_source' => [
+                            'id' => 2
+                        ],
+                        'sort' => [
+                            5
+                        ]
+                    ],
+                ]
+            ],
+        ]);
+
+        $builder = new Builder($modelMock, 'mustang');
+        $builder->orderBy('id');
+        /**
+         * @var CursorPaginator $paginator
+         */
+        $paginator = $this->engine->cursorPaginate($builder, $perPage, 'cursor', $cursor);
+
+        $this->assertEquals(4, $paginator->previousCursor()->parameter('id'));
+        $this->assertNull($paginator->nextCursor());
+
+        return $paginator->previousCursor();
+    }   
+
+    /**
+     * @depends test_cursor_paginate_next
+     */
+    public function test_cursor_paginate_previous(Cursor $cursor)
+    {
+        $perPage = 3;
+        $modelMock = Mockery::mock(new TestModel());
+        $modelMock->shouldReceive('getScoutModelsByIds')
+            ->andReturn(
+            collect([
+                new TestModel(['id' => 1]),
+                new TestModel(['id' => 2]),
+                new TestModel(['id' => 3])
+            ])
+        );
+
+        $this->client->shouldReceive('search')->with([
+            'index' => 'table',
+            'body' => [
+                'query' => [
+                    'query_string' => [
+                        'query' => 'mustang'
+                    ]
+                ],
+                'sort' => [
+                    [
+                        'id' => [
+                            'order' => 'desc'
+                        ]
+                    ]
+                ],
+                'size' => $perPage + 1,
+                'search_after' => [
+                    $cursor->parameter('id')
+                ]
+            ]
+        ])->andReturns([
+            'hits' => [
+                'total' => 5,
+                'hits' => [
+                    [
+                        '_id' => 3,
+                        '_source' => [
+                            'id' => 1
+                        ],
+                        'sort' => [
+                            3
+                        ]
+                    ],
+                    [
+                        '_id' => 2,
+                        '_source' => [
+                            'id' => 2
+                        ],
+                        'sort' => [
+                            2
+                        ]
+                    ],
+                    [
+                        '_id' => 1,
+                        '_source' => [
+                            'id' => 3
+                        ],
+                        'sort' => [
+                            1
+                        ]
+                    ],
+                ]
+            ],
+        ]);
+
+        $builder = new Builder($modelMock, 'mustang');
+        $builder->orderBy('id');
+        /**
+         * @var CursorPaginator $paginator
+         */
+        $paginator = $this->engine->cursorPaginate($builder, $perPage, 'cursor', $cursor);
+
+        $this->assertEquals(3, $paginator->nextCursor()->parameter('id'));
+        $this->assertNull($paginator->previousCursor());
+
+        return $paginator->previousCursor();
     }
 
 }
