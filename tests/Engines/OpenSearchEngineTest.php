@@ -8,9 +8,9 @@ use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Builder;
 use Mockery;
+use ONGR\ElasticsearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\Endpoints\Bulk;
-use OpenSearch\Endpoints\Delete;
 use OpenSearch\Endpoints\Search;
 use Orchestra\Testbench\TestCase;
 use stdClass;
@@ -425,6 +425,40 @@ class OpenSearchEngineTest extends TestCase
         $this->assertNull($paginator->previousCursor());
 
         return $paginator->previousCursor();
+    }
+
+    public function test_order_by_raw()
+    {
+        $perPage = 5;
+        $page = 2;
+
+        $this->client->shouldReceive('search')->once()->with([
+            'index' => 'table',
+            'body' => [
+                'query' => [
+                    'query_string' => [
+                        'query' => 'mustang'
+                    ]
+                ],
+                'sort' => [
+                    [
+                        'rating' => [
+                            'order' => 'desc',
+                            'mode' => 'avg'
+                        ]
+                    ]
+                ],
+                'size' => $perPage,
+                'from' => ($page - 1) * $perPage,
+            ]
+        ]);
+
+        $builder = new Builder(new TestModel(), 'mustang');
+        $builder->orderByRaw(
+            new FieldSort('rating', 'desc', ['mode' => 'avg'])
+        );
+
+        $this->engine->search->paginate($builder, $perPage, $page);
     }
 
 }
