@@ -99,7 +99,7 @@ final class SearchFactory
                 $direction = $sort->getOrder() ?? 'asc';
 
                 if ($cursor && $cursor->pointsToPreviousItems()) {
-                    $direction === 'asc' ? 'desc' : 'asc';
+                    $direction = $direction === 'asc' ? 'desc' : 'asc';
                     $sort->setOrder($direction);
                 }
 

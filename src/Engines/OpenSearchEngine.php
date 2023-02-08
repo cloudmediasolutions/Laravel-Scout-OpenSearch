@@ -109,9 +109,12 @@ class OpenSearchEngine extends Engine
      *
      * @return mixed
      */
-    protected function performSearch(Builder $builder, array $options = [])
-    {
-        $searchBody = SearchFactory::create($builder, $options);
+    protected function performSearch(
+        Builder $builder, 
+        array $options = [], 
+        Cursor $cursor = null
+    ) {
+        $searchBody = SearchFactory::create($builder, $options, $cursor);
         if ($builder->callback) {
             /** @var callable */
             $callback = $builder->callback;
