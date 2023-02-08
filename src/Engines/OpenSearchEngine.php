@@ -308,39 +308,13 @@ class OpenSearchEngine extends Engine
             ? $cursor->parameters($cols)
             : null;
 
-        if ($cursor !== null && 
-            $cursor->pointsToPreviousItems()
-        ) {
-            $builder->orders = array_map(
-                [$this, 'swapDirection'],
-                $builder->orders
-            );
-        }
-
-        return $this->performSearch($builder, array_filter([
-            'size' => $perPage + 1,
-            'searchAfter' => $searchAfter
-        ]));
-    }
-
-    private function swapDirection(array|FieldSort $item): array|FieldSort
-    {
-        $direction = is_array($item) ? $item['direction'] : $item->getOrder();
-
-        if ($direction === null) {
-            $direction = 'asc';
-        }
-
-        $direction = $direction === 'asc' ? 'desc' : 'asc';
-
-        if (is_array($item)) {
-            $item['direction'] = $direction;
-        } 
-
-        else {
-            $item->setOrder($direction);
-        }
-
-        return $item;
+        return $this->performSearch(
+            $builder, 
+            array_filter([
+                'size' => $perPage + 1,
+                'searchAfter' => $searchAfter
+            ]), 
+            $cursor
+        );
     }
 }
