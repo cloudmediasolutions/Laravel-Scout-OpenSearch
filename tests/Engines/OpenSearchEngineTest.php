@@ -3,6 +3,7 @@
 namespace Tests\Engines;
 
 use CloudMediaSolutions\LaravelScoutOpenSearch\Engines\OpenSearchEngine;
+use CloudMediaSolutions\LaravelScoutOpenSearch\Providers\OpenSearchServiceProvider;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
@@ -24,6 +25,14 @@ class OpenSearchEngineTest extends TestCase
         parent::setUp();
         $this->client = Mockery::mock(Client::class);
         $this->engine = new OpenSearchEngine($this->client);
+    }
+
+
+    protected function getPackageProviders($app)
+    {
+        return [
+            OpenSearchServiceProvider::class,
+        ];
     }
 
     public function test_update_adds_document()
@@ -458,7 +467,7 @@ class OpenSearchEngineTest extends TestCase
             new FieldSort('rating', 'desc', ['mode' => 'avg'])
         );
 
-        $this->engine->search->paginate($builder, $perPage, $page);
+        $this->engine->paginate($builder, $perPage, $page);
     }
 
 }
