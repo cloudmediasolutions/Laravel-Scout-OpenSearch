@@ -10,15 +10,17 @@ use Laravel\Scout\Builder;
 use Mockery;
 use OpenSearch\Client;
 use OpenSearch\Endpoints\Bulk;
-use OpenSearch\Endpoints\Delete;
 use OpenSearch\Endpoints\Search;
 use Orchestra\Testbench\TestCase;
 use stdClass;
 use Tests\Fixtures\TestModel;
 
+/**
+ * @property MockInterface|LegacyMockInterface $client
+ * @property Client $engine
+ */
 class OpenSearchEngineTest extends TestCase
 {
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -47,6 +49,9 @@ class OpenSearchEngineTest extends TestCase
 
     public function test_map_correctly_maps_results_to_models()
     {
+        /**
+         * @var MockInterface|LegacyMockInterface $model
+         */
         $model = Mockery::mock(stdClass::class);
         $model->shouldReceive(['getKeyName' => 'id']);
         $model->shouldReceive('getScoutModelsByIds')->andReturn($models = Collection::make([new TestModel(['id' => 1])]));
@@ -65,6 +70,9 @@ class OpenSearchEngineTest extends TestCase
 
     public function test_map_method_respects_order()
     {
+        /**
+         * @var MockInterface|LegacyMockInterface $model
+         */
         $model = Mockery::mock(stdClass::class);
         $model->shouldReceive(['getKeyName' => 'id']);
         $model->shouldReceive('getScoutModelsByIds')->andReturn(Collection::make([
