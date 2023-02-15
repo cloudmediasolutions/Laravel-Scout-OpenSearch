@@ -90,4 +90,51 @@ Cursor pagination uses [search_after](https://opensearch.org/docs/latest/opensea
 ```
 If no sorting provided, the _id field will be used as default, and therefore no relevance sorting can be applied when using cursor pagination.
 
-Sort modes, nested and geo_distance sort are not supported yet.
+#### Cursor pagination with sort mode
+
+```php
+
+    Song::search()
+        ->orderByRaw(
+            new FieldSort('stars', 'desc', ['mode' => 'avg'])
+        )
+        ->orderBy('id')
+        ->cursorPaginate(10);
+
+```
+
+#### Cursor pagination with nested object sort
+
+```php
+
+    Article::search()
+        ->orderByRaw(
+            (new FieldSort('comments.created_at', 'desc', ['mode' => 'max']))
+                ->setNestedFilter(new NestedSort('comments'))
+        )
+        ->orderBy('id')
+        ->cursorPaginate(10);
+
+```
+
+#### Cursor pagination with _geo_distance
+
+```php
+
+    Store::search()
+        ->orderByRaw(new FieldSort(
+            '_geo_distance',
+            'desc',
+            [
+                'point' => [10, 10],
+                'unit' => 'km',
+                'distance_type' => 'arc',
+                'mode' => 'min',
+                'ignore_unmapped' => true
+            ]
+        ))
+        ->orderBy('id')
+        ->cursorPaginate(10);
+
+```
+

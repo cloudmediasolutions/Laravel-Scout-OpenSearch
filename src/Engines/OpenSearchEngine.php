@@ -3,9 +3,7 @@
 namespace CloudMediaSolutions\LaravelScoutOpenSearch\Engines;
 
 use CloudMediaSolutions\LaravelScoutOpenSearch\Paginator\ScrollPaginator;
-use CloudMediaSolutions\LaravelScoutOpenSearch\Paginator\ScrollPaginatorRaw;
 use CloudMediaSolutions\LaravelScoutOpenSearch\SearchFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\Paginator;
@@ -14,6 +12,7 @@ use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Engines\Engine;
 use ONGR\ElasticsearchDSL\Query\MatchAllQuery;
+use ONGR\ElasticsearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 
 class OpenSearchEngine extends Engine
@@ -110,9 +109,12 @@ class OpenSearchEngine extends Engine
      *
      * @return mixed
      */
-    protected function performSearch(Builder $builder, array $options = [])
-    {
-        $searchBody = SearchFactory::create($builder, $options);
+    protected function performSearch(
+        Builder $builder, 
+        array $options = [], 
+        Cursor $cursor = null
+    ) {
+        $searchBody = SearchFactory::create($builder, $options, $cursor);
         if ($builder->callback) {
             /** @var callable */
             $callback = $builder->callback;
@@ -266,7 +268,7 @@ class OpenSearchEngine extends Engine
         }
 
         $cursor = $this->resolveCursor($cursor, $cursorName);
-        $cols = array_column($builder->orders, 'column');
+        $cols = array_map([$this, 'orderCol'], $builder->orders);
 
         $response = $this->performCursorSearch($builder, $perPage, $cols, $cursor);
 
@@ -294,6 +296,11 @@ class OpenSearchEngine extends Engine
             : CursorPaginator::resolveCurrentCursor($cursorName, $cursor);
     }
 
+    private function orderCol(array|FieldSort $order): string
+    {
+        return is_array($order) ? $order['column'] : $order->getField();
+    }
+
     private function performCursorSearch(
         Builder $builder, 
         int $perPage, 
@@ -304,21 +311,13 @@ class OpenSearchEngine extends Engine
             ? $cursor->parameters($cols)
             : null;
 
-        if ($cursor !== null && 
-            $cursor->pointsToPreviousItems()
-        ) {
-            $builder->orders = array_map(
-                function ($order) {
-                    $order['direction'] = $order['direction'] === 'asc' ? 'desc' : 'asc';
-                    return $order;
-                }, 
-                $builder->orders
-            );
-        }
-
-        return $this->performSearch($builder, array_filter([
-            'size' => $perPage + 1,
-            'searchAfter' => $searchAfter
-        ]));
+        return $this->performSearch(
+            $builder, 
+            array_filter([
+                'size' => $perPage + 1,
+                'searchAfter' => $searchAfter
+            ]), 
+            $cursor
+        );
     }
 }
