@@ -8,6 +8,8 @@ use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Builder;
 use Mockery;
+use Mockery\LegacyMockInterface;
+use Mockery\MockInterface;
 use OpenSearch\Client;
 use OpenSearch\Endpoints\Bulk;
 use OpenSearch\Endpoints\Search;
@@ -15,12 +17,11 @@ use Orchestra\Testbench\TestCase;
 use stdClass;
 use Tests\Fixtures\TestModel;
 
-/**
- * @property MockInterface|LegacyMockInterface $client
- * @property OpenSearchEngine $engine
- */
 class OpenSearchEngineTest extends TestCase
 {
+    private MockInterface|LegacyMockInterface|null $client = null;
+    private ?OpenSearchEngine $engine = null;
+
     protected function setUp(): void
     {
         parent::setUp();
