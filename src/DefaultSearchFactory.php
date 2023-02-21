@@ -35,11 +35,7 @@ class DefaultSearchFactory implements SearchFactory
             }
         }
 
-        $sorts = $this->mappedSorts($builder);
-
-        if ($cursor && $cursor->pointsToPreviousItems()) {
-            array_walk($sorts, [$this, "invertOrders"]);
-        }
+        $sorts = $this->mappedSorts($builder, $cursor);
 
         /**@var FieldSort $sort */
         foreach ($sorts as $sort) {
@@ -74,9 +70,9 @@ class DefaultSearchFactory implements SearchFactory
      * @param Builder $builder
      * @return FieldSort[]
      */
-    protected function mappedSorts(Builder $builder): array
+    protected function mappedSorts(Builder $builder, ?Cursor $cursor): array
     {
-        return array_map(
+        $sorts = array_map(
             function ($order) {
                 return is_array($order)
                     ? new FieldSort($order['column'], $order['direction'])
@@ -84,9 +80,15 @@ class DefaultSearchFactory implements SearchFactory
             },
             $builder->orders
         );
+
+        if ($cursor && $cursor->pointsToPreviousItems()) {
+            array_walk($sorts, [$this, "invertOrder"]);
+        }
+
+        return $sorts;
     }
 
-    protected function invertOrders(FieldSort $sort): void
+    protected function invertOrder(FieldSort $sort): void
     {
         $direction = $sort->getOrder() ?? 'asc';
 
