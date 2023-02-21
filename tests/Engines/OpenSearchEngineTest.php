@@ -17,7 +17,7 @@ use Tests\Fixtures\TestModel;
 
 /**
  * @property MockInterface|LegacyMockInterface $client
- * @property Client $engine
+ * @property OpenSearchEngine $engine
  */
 class OpenSearchEngineTest extends TestCase
 {
