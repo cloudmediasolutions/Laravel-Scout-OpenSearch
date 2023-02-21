@@ -2,6 +2,7 @@
 
 namespace CloudMediaSolutions\LaravelScoutOpenSearch;
 
+use Illuminate\Pagination\Cursor;
 use Laravel\Scout\Builder;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\QueryStringQuery;
@@ -12,7 +13,7 @@ use ONGR\ElasticsearchDSL\Sort\FieldSort;
 
 final class SearchFactory
 {
-    public static function create(Builder $builder, array $options = []): Search
+    public static function create(Builder $builder, array $options = [], Cursor $cursor = null): Search
     {
         $search = new Search();
 
@@ -44,9 +45,7 @@ final class SearchFactory
         }
 
         if (! empty($builder->orders)) {
-            foreach ($builder->orders as $order) {
-                $search->addSort(new FieldSort($order['column'], $order['direction']));
-            }
+            $search = static::addOrders($builder, $cursor, $search);
         }
 
         return $search;
@@ -87,5 +86,32 @@ final class SearchFactory
         }
 
         return $boolQuery;
+    }
+
+    private static function addOrders(Builder $builder, ?Cursor $cursor, Search $search): Search
+    {
+        $sorts = array_map(
+            function ($order) use ($cursor) {
+                $sort = is_array($order) 
+                    ? new FieldSort($order['column'], $order['direction']) 
+                    : $order;
+
+                $direction = $sort->getOrder() ?? 'asc';
+
+                if ($cursor && $cursor->pointsToPreviousItems()) {
+                    $direction = $direction === 'asc' ? 'desc' : 'asc';
+                    $sort->setOrder($direction);
+                }
+
+                return $sort;
+            },
+            $builder->orders
+        );
+
+        foreach ($sorts as $sort) {
+            $search->addSort($sort);
+        }
+
+        return $search;
     }
 }
