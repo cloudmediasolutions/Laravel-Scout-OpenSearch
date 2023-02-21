@@ -8,6 +8,7 @@ use Illuminate\Pagination\Cursor;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Builder;
+use Mockery;
 use Mockery\LegacyMockInterface;
 use Mockery\MockInterface;
 use ONGR\ElasticsearchDSL\Sort\FieldSort;
