@@ -2,8 +2,8 @@
 
 namespace CloudMediaSolutions\LaravelScoutOpenSearch\Providers;
 
+use CloudMediaSolutions\LaravelScoutOpenSearch\DefaultSearchFactory;
 use CloudMediaSolutions\LaravelScoutOpenSearch\Engines\OpenSearchEngine;
-use DefaultSearchFactory;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Scout\Builder;
