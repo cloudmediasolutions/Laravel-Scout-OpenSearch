@@ -17,8 +17,10 @@ use OpenSearch\Client;
 
 class OpenSearchEngine extends Engine
 {
-    public function __construct(public Client $opensearch)
-    {
+    public function __construct(
+        public Client $opensearch,
+        private SearchFactory $searchFactory
+    ) {
         //
     }
 
@@ -114,7 +116,7 @@ class OpenSearchEngine extends Engine
         array $options = [], 
         Cursor $cursor = null
     ) {
-        $searchBody = SearchFactory::create($builder, $options, $cursor);
+        $searchBody = $this->searchFactory->create($builder, $options, $cursor);
         if ($builder->callback) {
             /** @var callable */
             $callback = $builder->callback;

@@ -2,6 +2,7 @@
 
 namespace Tests\Engines;
 
+use CloudMediaSolutions\LaravelScoutOpenSearch\DefaultSearchFactory;
 use CloudMediaSolutions\LaravelScoutOpenSearch\Engines\OpenSearchEngine;
 use CloudMediaSolutions\LaravelScoutOpenSearch\Providers\OpenSearchServiceProvider;
 use Illuminate\Pagination\Cursor;
@@ -24,7 +25,7 @@ class OpenSearchEngineTest extends TestCase
     {
         parent::setUp();
         $this->client = Mockery::mock(Client::class);
-        $this->engine = new OpenSearchEngine($this->client);
+        $this->engine = new OpenSearchEngine($this->client, new DefaultSearchFactory);
     }
 
 
