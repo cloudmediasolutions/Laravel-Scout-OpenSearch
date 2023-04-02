@@ -7,7 +7,7 @@ use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Scout\Builder;
 use Laravel\Scout\EngineManager;
-use ONGR\ElasticsearchDSL\Sort\FieldSort;
+use OpenSearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 

@@ -9,7 +9,7 @@ use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Builder;
 use Mockery;
-use ONGR\ElasticsearchDSL\Sort\FieldSort;
+use OpenSearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\Endpoints\Bulk;
 use OpenSearch\Endpoints\Search;
@@ -464,7 +464,7 @@ class OpenSearchEngineTest extends TestCase
 
         $builder = new Builder(new TestModel(), 'mustang');
         $builder->orderByRaw(
-            new FieldSort('rating', 'desc', ['mode' => 'avg'])
+            new FieldSort('rating', 'desc', null, ['mode' => 'avg'])
         );
 
         $this->engine->paginate($builder, $perPage, $page);
