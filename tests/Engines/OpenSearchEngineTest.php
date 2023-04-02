@@ -9,7 +9,10 @@ use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Builder;
 use Mockery;
-use OpenSearchDSL\Sort\FieldSort;
+use Mockery\LegacyMockInterface;
+use Mockery\MockInterface;
+use OpenSearch
+\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\Endpoints\Bulk;
 use OpenSearch\Endpoints\Search;
@@ -19,6 +22,8 @@ use Tests\Fixtures\TestModel;
 
 class OpenSearchEngineTest extends TestCase
 {
+    private MockInterface|LegacyMockInterface|null $client = null;
+    private ?OpenSearchEngine $engine = null;
 
     protected function setUp(): void
     {
@@ -56,6 +61,9 @@ class OpenSearchEngineTest extends TestCase
 
     public function test_map_correctly_maps_results_to_models()
     {
+        /**
+         * @var MockInterface|LegacyMockInterface $model
+         */
         $model = Mockery::mock(stdClass::class);
         $model->shouldReceive(['getKeyName' => 'id']);
         $model->shouldReceive('getScoutModelsByIds')->andReturn($models = Collection::make([new TestModel(['id' => 1])]));
@@ -74,6 +82,9 @@ class OpenSearchEngineTest extends TestCase
 
     public function test_map_method_respects_order()
     {
+        /**
+         * @var MockInterface|LegacyMockInterface $model
+         */
         $model = Mockery::mock(stdClass::class);
         $model->shouldReceive(['getKeyName' => 'id']);
         $model->shouldReceive('getScoutModelsByIds')->andReturn(Collection::make([
