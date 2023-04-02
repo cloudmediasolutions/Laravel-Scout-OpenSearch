@@ -11,8 +11,7 @@ use Laravel\Scout\Builder;
 use Mockery;
 use Mockery\LegacyMockInterface;
 use Mockery\MockInterface;
-use OpenSearch
-\Sort\FieldSort;
+use OpenSearch\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\Endpoints\Bulk;
 use OpenSearch\Endpoints\Search;
