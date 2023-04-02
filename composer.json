@@ -9,16 +9,16 @@
         "aws"
     ],
     "require": {
-        "php": ">=8.0",
-        "laravel/scout": "^8.0 || ^9.1",
-        "ongr/elasticsearch-dsl": "^7.2",
+        "php": "^8.0",
+        "laravel/scout": "^8.0|^9.0",
         "opensearch-project/opensearch-php": "^2.0",
-        "illuminate/support": "^9.17"
+        "illuminate/support": "^9.0|^10.0",
+        "shyim/opensearch-php-dsl": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5",
         "mockery/mockery": "^1.5",
-        "orchestra/testbench": "^7.5"
+        "orchestra/testbench": "^7.0|^8.0"
     },
     "license": "MIT",
     "authors": [

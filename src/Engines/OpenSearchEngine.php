@@ -11,8 +11,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Engines\Engine;
-use ONGR\ElasticsearchDSL\Query\MatchAllQuery;
-use ONGR\ElasticsearchDSL\Sort\FieldSort;
+use OpenSearchDSL\Query\MatchAllQuery;
+use OpenSearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 
 class OpenSearchEngine extends Engine
