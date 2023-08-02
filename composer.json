@@ -10,7 +10,7 @@
     ],
     "require": {
         "php": "^8.0",
-        "laravel/scout": "^8.0|^9.0",
+        "laravel/scout": "^8.0|^9.0|^10.0",
         "opensearch-project/opensearch-php": "^2.0",
         "illuminate/support": "^9.0|^10.0",
         "shyim/opensearch-php-dsl": "^1.0"
