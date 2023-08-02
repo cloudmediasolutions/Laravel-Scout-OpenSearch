@@ -5,13 +5,12 @@ namespace Tests\Engines;
 use CloudMediaSolutions\LaravelScoutOpenSearch\Engines\OpenSearchEngine;
 use CloudMediaSolutions\LaravelScoutOpenSearch\Providers\OpenSearchServiceProvider;
 use Illuminate\Pagination\Cursor;
-use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Builder;
 use Mockery;
 use Mockery\LegacyMockInterface;
 use Mockery\MockInterface;
-use OpenSearch\Sort\FieldSort;
+use OpenSearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\Endpoints\Bulk;
 use OpenSearch\Endpoints\Search;
@@ -276,9 +275,7 @@ class OpenSearchEngineTest extends TestCase
 
         $builder = new Builder($modelMock, 'mustang');
         $builder->orderBy('id');
-        /**
-         * @var CursorPaginator $paginator
-         */
+
         $paginator = $this->engine->cursorPaginate($builder, $perPage);
 
         $this->assertEquals(3, $paginator->nextCursor()->parameter('id'));
@@ -351,9 +348,7 @@ class OpenSearchEngineTest extends TestCase
 
         $builder = new Builder($modelMock, 'mustang');
         $builder->orderBy('id');
-        /**
-         * @var CursorPaginator $paginator
-         */
+
         $paginator = $this->engine->cursorPaginate($builder, $perPage, 'cursor', $cursor);
 
         $this->assertEquals(4, $paginator->previousCursor()->parameter('id'));
@@ -435,9 +430,7 @@ class OpenSearchEngineTest extends TestCase
 
         $builder = new Builder($modelMock, 'mustang');
         $builder->orderBy('id');
-        /**
-         * @var CursorPaginator $paginator
-         */
+
         $paginator = $this->engine->cursorPaginate($builder, $perPage, 'cursor', $cursor);
 
         $this->assertEquals(3, $paginator->nextCursor()->parameter('id'));
