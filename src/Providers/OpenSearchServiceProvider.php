@@ -3,13 +3,14 @@
 namespace CloudMediaSolutions\LaravelScoutOpenSearch\Providers;
 
 use CloudMediaSolutions\LaravelScoutOpenSearch\Engines\OpenSearchEngine;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Scout\Builder;
 use Laravel\Scout\EngineManager;
-use OpenSearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
+use OpenSearchDSL\Sort\FieldSort;
 
 class OpenSearchServiceProvider extends ServiceProvider
 {
@@ -24,12 +25,13 @@ class OpenSearchServiceProvider extends ServiceProvider
             __DIR__.'/../../config/opensearch.php' => config_path('opensearch.php'),
         ], 'opensearch-config');
 
-        $this->app->make(EngineManager::class)->extend(OpenSearchEngine::class, function () {
-            $opensearch = app(Client::class);
+        $this->app->make(EngineManager::class)->extend(OpenSearchEngine::class, function (Application $app) {
+            $opensearch = $app->make(Client::class);
 
             return new OpenSearchEngine($opensearch);
         });
-        $this->app->bind(Client::class, function () {
+
+        $this->app->singleton(Client::class, function () {
             return ClientBuilder::fromConfig(config('opensearch.client'));
         });
 
