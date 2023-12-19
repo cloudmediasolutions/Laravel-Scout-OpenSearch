@@ -11,6 +11,7 @@ use Laravel\Scout\EngineManager;
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
 use OpenSearchDSL\Sort\FieldSort;
+use Aws\Credentials\CredentialProvider;
 
 class OpenSearchServiceProvider extends ServiceProvider
 {
@@ -32,7 +33,12 @@ class OpenSearchServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(Client::class, function () {
-            return ClientBuilder::fromConfig(config('opensearch.client'));
+            // return ClientBuilder::fromConfig(config('opensearch.client'));
+            return (new ClientBuilder())
+                ->setHosts(config('opensearch.client.hosts'))
+                ->setSigV4Region(config('opensearch.client.sigV4Region'))
+                ->setSigV4Service(config('opensearch.client.sigV4Service'))
+                ->setSigV4CredentialProvider(CredentialProvider::defaultProvider());
         });
 
         Builder::macro('cursorPaginate', function (int $perPage = null, string $cursorName = 'cursor', $cursor = null): CursorPaginator {
