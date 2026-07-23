@@ -10,17 +10,19 @@ use Laravel\Scout\Builder;
 use Mockery;
 use Mockery\LegacyMockInterface;
 use Mockery\MockInterface;
-use OpenSearchDSL\Sort\FieldSort;
 use OpenSearch\Client;
 use OpenSearch\Endpoints\Bulk;
 use OpenSearch\Endpoints\Search;
+use OpenSearchDSL\Sort\FieldSort;
 use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\Attributes\Depends;
 use stdClass;
 use Tests\Fixtures\TestModel;
 
 class OpenSearchEngineTest extends TestCase
 {
     private MockInterface|LegacyMockInterface|null $client = null;
+
     private ?OpenSearchEngine $engine = null;
 
     protected function setUp(): void
@@ -29,7 +31,6 @@ class OpenSearchEngineTest extends TestCase
         $this->client = Mockery::mock(Client::class);
         $this->engine = new OpenSearchEngine($this->client);
     }
-
 
     protected function getPackageProviders($app)
     {
@@ -46,10 +47,10 @@ class OpenSearchEngineTest extends TestCase
                     'index' => [
                         '_index' => 'table',
                         '_id' => 100,
-                    ]
+                    ],
                 ],
                 [
-                    'id' => 100
+                    'id' => 100,
                 ],
             ],
         ])->andReturns(Bulk::class);
@@ -71,7 +72,7 @@ class OpenSearchEngineTest extends TestCase
             'hits' => [
                 'hits' => [
                     ['_id' => 1],
-                ]
+                ],
             ],
         ], $model);
 
@@ -101,7 +102,7 @@ class OpenSearchEngineTest extends TestCase
                     ['_id' => 2],
                     ['_id' => 4],
                     ['_id' => 3],
-                ]
+                ],
             ],
         ], $model);
 
@@ -124,15 +125,15 @@ class OpenSearchEngineTest extends TestCase
             'body' => [
                 'query' => [
                     'query_string' => [
-                        'query' => 'mustang'
-                    ]
+                        'query' => 'mustang',
+                    ],
                 ],
                 'size' => $perPage,
                 'from' => ($page - 1) * $perPage,
-            ]
+            ],
         ]);
 
-        $builder = new Builder(new TestModel(), 'mustang');
+        $builder = new Builder(new TestModel, 'mustang');
         $this->engine->paginate($builder, $perPage, $page);
     }
 
@@ -149,7 +150,14 @@ class OpenSearchEngineTest extends TestCase
                         'filter' => [
                             [
                                 'term' => [
-                                    'id' => 123,
+                                    'id' => '123',
+                                ],
+                            ],
+                            [
+                                'range' => [
+                                    'quantity' => [
+                                        'gte' => 10,
+                                    ],
                                 ],
                             ],
                             [
@@ -161,10 +169,25 @@ class OpenSearchEngineTest extends TestCase
                                 ],
                             ],
                         ],
+                        'must_not' => [
+                            [
+                                'term' => [
+                                    'archived' => true,
+                                ],
+                            ],
+                            [
+                                'terms' => [
+                                    'type' => [
+                                        'internal',
+                                        'hidden',
+                                    ],
+                                ],
+                            ],
+                        ],
                         'must' => [
                             [
                                 'query_string' => [
-                                    'query' => 'mustang'
+                                    'query' => 'mustang',
                                 ],
                             ],
                         ],
@@ -173,12 +196,15 @@ class OpenSearchEngineTest extends TestCase
                 ],
                 'size' => $perPage,
                 'from' => ($page - 1) * $perPage,
-            ]
+            ],
         ])->andReturns(Search::class);
 
-        $builder = new Builder(new TestModel(), 'mustang');
+        $builder = new Builder(new TestModel, 'mustang');
         $builder->where('id', '123');
+        $builder->where('quantity', '>=', 10);
+        $builder->where('archived', '!=', true);
         $builder->whereIn('status', ['active', 'inactive']);
+        $builder->whereNotIn('type', ['internal', 'hidden']);
         $this->engine->paginate($builder, $perPage, $page);
     }
 
@@ -187,12 +213,12 @@ class OpenSearchEngineTest extends TestCase
         $this->client->shouldReceive('bulk')->once()->with([
             'body' => [
                 [
-                    "delete" => [
-                        "_index" => "table",
-                        "_id" => 100
-                    ]
-                ]
-            ]
+                    'delete' => [
+                        '_index' => 'table',
+                        '_id' => 100,
+                    ],
+                ],
+            ],
         ])->andReturns(Bulk::class);
 
         $this->engine->delete(Collection::make([new TestModel(['id' => 100])]));
@@ -201,34 +227,34 @@ class OpenSearchEngineTest extends TestCase
     public function test_cursor_paginate()
     {
         $perPage = 3;
-        $modelMock = Mockery::mock(new TestModel());
+        $modelMock = Mockery::mock(new TestModel);
         $modelMock->shouldReceive('getScoutModelsByIds')
             ->andReturn(
-            collect([
-                new TestModel(['id' => 1]),
-                new TestModel(['id' => 2]),
-                new TestModel(['id' => 3]),
-                new TestModel(['id' => 4])
-            ])
-        );
+                collect([
+                    new TestModel(['id' => 1]),
+                    new TestModel(['id' => 2]),
+                    new TestModel(['id' => 3]),
+                    new TestModel(['id' => 4]),
+                ])
+            );
 
         $this->client->shouldReceive('search')->with([
             'index' => 'table',
             'body' => [
                 'query' => [
                     'query_string' => [
-                        'query' => 'mustang'
-                    ]
+                        'query' => 'mustang',
+                    ],
                 ],
                 'sort' => [
                     [
                         'id' => [
-                            'order' => 'asc'
-                        ]
-                    ]
+                            'order' => 'asc',
+                        ],
+                    ],
                 ],
                 'size' => $perPage + 1,
-            ]
+            ],
         ])->andReturns([
             'hits' => [
                 'total' => 5,
@@ -236,40 +262,40 @@ class OpenSearchEngineTest extends TestCase
                     [
                         '_id' => 1,
                         '_source' => [
-                            'id' => 1
+                            'id' => 1,
                         ],
                         'sort' => [
-                            1
-                        ]
+                            1,
+                        ],
                     ],
                     [
                         '_id' => 2,
                         '_source' => [
-                            'id' => 2
+                            'id' => 2,
                         ],
                         'sort' => [
-                            2
-                        ]
+                            2,
+                        ],
                     ],
                     [
                         '_id' => 3,
                         '_source' => [
-                            'id' => 3
+                            'id' => 3,
                         ],
                         'sort' => [
-                            3
-                        ]
+                            3,
+                        ],
                     ],
                     [
                         '_id' => 4,
                         '_source' => [
-                            'id' => 4
+                            'id' => 4,
                         ],
                         'sort' => [
-                            4
-                        ]
-                    ]
-                ]
+                            4,
+                        ],
+                    ],
+                ],
             ],
         ]);
 
@@ -286,40 +312,40 @@ class OpenSearchEngineTest extends TestCase
 
     /**
      * @depends test_cursor_paginate
-     *
      */
+    #[Depends('test_cursor_paginate')]
     public function test_cursor_paginate_next(Cursor $cursor)
     {
         $perPage = 3;
-        $modelMock = Mockery::mock(new TestModel());
+        $modelMock = Mockery::mock(new TestModel);
         $modelMock->shouldReceive('getScoutModelsByIds')
             ->andReturn(
-            collect([
-                new TestModel(['id' => 4]),
-                new TestModel(['id' => 5])
-            ])
-        );
+                collect([
+                    new TestModel(['id' => 4]),
+                    new TestModel(['id' => 5]),
+                ])
+            );
 
         $this->client->shouldReceive('search')->with([
             'index' => 'table',
             'body' => [
                 'query' => [
                     'query_string' => [
-                        'query' => 'mustang'
-                    ]
+                        'query' => 'mustang',
+                    ],
                 ],
                 'sort' => [
                     [
                         'id' => [
-                            'order' => 'asc'
-                        ]
-                    ]
+                            'order' => 'asc',
+                        ],
+                    ],
                 ],
                 'size' => $perPage + 1,
                 'search_after' => [
-                    $cursor->parameter('id')
-                ]
-            ]
+                    $cursor->parameter('id'),
+                ],
+            ],
         ])->andReturns([
             'hits' => [
                 'total' => 5,
@@ -327,22 +353,22 @@ class OpenSearchEngineTest extends TestCase
                     [
                         '_id' => 4,
                         '_source' => [
-                            'id' => 1
+                            'id' => 1,
                         ],
                         'sort' => [
-                            4
-                        ]
+                            4,
+                        ],
                     ],
                     [
                         '_id' => 5,
                         '_source' => [
-                            'id' => 2
+                            'id' => 2,
                         ],
                         'sort' => [
-                            5
-                        ]
+                            5,
+                        ],
                     ],
-                ]
+                ],
             ],
         ]);
 
@@ -355,44 +381,45 @@ class OpenSearchEngineTest extends TestCase
         $this->assertNull($paginator->nextCursor());
 
         return $paginator->previousCursor();
-    }   
+    }
 
     /**
      * @depends test_cursor_paginate_next
      */
+    #[Depends('test_cursor_paginate_next')]
     public function test_cursor_paginate_previous(Cursor $cursor)
     {
         $perPage = 3;
-        $modelMock = Mockery::mock(new TestModel());
+        $modelMock = Mockery::mock(new TestModel);
         $modelMock->shouldReceive('getScoutModelsByIds')
             ->andReturn(
-            collect([
-                new TestModel(['id' => 1]),
-                new TestModel(['id' => 2]),
-                new TestModel(['id' => 3])
-            ])
-        );
+                collect([
+                    new TestModel(['id' => 1]),
+                    new TestModel(['id' => 2]),
+                    new TestModel(['id' => 3]),
+                ])
+            );
 
         $this->client->shouldReceive('search')->with([
             'index' => 'table',
             'body' => [
                 'query' => [
                     'query_string' => [
-                        'query' => 'mustang'
-                    ]
+                        'query' => 'mustang',
+                    ],
                 ],
                 'sort' => [
                     [
                         'id' => [
-                            'order' => 'desc'
-                        ]
-                    ]
+                            'order' => 'desc',
+                        ],
+                    ],
                 ],
                 'size' => $perPage + 1,
                 'search_after' => [
-                    $cursor->parameter('id')
-                ]
-            ]
+                    $cursor->parameter('id'),
+                ],
+            ],
         ])->andReturns([
             'hits' => [
                 'total' => 5,
@@ -400,31 +427,31 @@ class OpenSearchEngineTest extends TestCase
                     [
                         '_id' => 3,
                         '_source' => [
-                            'id' => 1
+                            'id' => 1,
                         ],
                         'sort' => [
-                            3
-                        ]
+                            3,
+                        ],
                     ],
                     [
                         '_id' => 2,
                         '_source' => [
-                            'id' => 2
+                            'id' => 2,
                         ],
                         'sort' => [
-                            2
-                        ]
+                            2,
+                        ],
                     ],
                     [
                         '_id' => 1,
                         '_source' => [
-                            'id' => 3
+                            'id' => 3,
                         ],
                         'sort' => [
-                            1
-                        ]
+                            1,
+                        ],
                     ],
-                ]
+                ],
             ],
         ]);
 
@@ -449,28 +476,27 @@ class OpenSearchEngineTest extends TestCase
             'body' => [
                 'query' => [
                     'query_string' => [
-                        'query' => 'mustang'
-                    ]
+                        'query' => 'mustang',
+                    ],
                 ],
                 'sort' => [
                     [
                         'rating' => [
                             'order' => 'desc',
-                            'mode' => 'avg'
-                        ]
-                    ]
+                            'mode' => 'avg',
+                        ],
+                    ],
                 ],
                 'size' => $perPage,
                 'from' => ($page - 1) * $perPage,
-            ]
+            ],
         ]);
 
-        $builder = new Builder(new TestModel(), 'mustang');
+        $builder = new Builder(new TestModel, 'mustang');
         $builder->orderByRaw(
             new FieldSort('rating', 'desc', null, ['mode' => 'avg'])
         );
 
         $this->engine->paginate($builder, $perPage, $page);
     }
-
 }
